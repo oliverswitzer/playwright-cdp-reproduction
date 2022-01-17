@@ -1,0 +1,19 @@
+{
+  "name": "playwright-cdp-spike",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.17.2"
+  },
+  "dependencies": {
+    "node-fetch": "^3.1.1",
+    "playwright": "^1.17.2",
+    "puppeteer-extra-plugin-stealth": "^2.9.0"
+  }
+}
