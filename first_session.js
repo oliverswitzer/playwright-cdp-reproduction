@@ -1,33 +1,41 @@
-//@ts-check
-import { chromium } from "playwright";
+import { chromium } from "playwright-chromium";
+import fetch from "node-fetch";
 
 (async () => {
-  const context1 = await chromium.launchPersistentContext("", {
+  const browserOne = await chromium.launch({
     args: ["--remote-debugging-port=9222"],
+    devTools: true,
     headless: false,
-    userAgent: "Some Overriden User Agent",
   });
 
-  await context1.addCookies([
+  const contextOne = await browserOne.newContext({
+    userAgent: "Some Overriden User Agent",
+  });
+  await contextOne.addCookies([
     {
       name: "Some cookie",
       value: "Some cookie value",
       url: "https://example.com",
     },
   ]);
-  context1.addInitScript(() => (window.hello = "hello"));
+  contextOne.addInitScript(() => (window.hello = "hello"));
 
-  const pageOne = await context1.newPage();
+  const pageOne = await contextOne.newPage();
   await pageOne.goto("https://google.com");
 
-  const browser2 = await chromium.connectOverCDP("http://localhost:9222");
+  // BEGIN: Try to connect to previously created Chromium session via CDP
+  const [{ webSocketDebuggerUrl: debugWsUrl }] = await fetch(
+    "http://localhost:9222/json/list"
+  ).then((r) => r.json());
+
+  const browserTwo = await chromium.connectOverCDP(debugWsUrl);
 
   // Shows 1 context
   console.log(
     "Number of contexts in CDP browser session: ",
-    browser2.contexts().length
+    browserTwo.contexts().length
   );
-  const contextTwo = browser2.contexts()[0];
+  const contextTwo = browserTwo.contexts()[0];
 
   // Shows 0 pages
   console.log(
@@ -40,8 +48,4 @@ import { chromium } from "playwright";
   // browserContext.newPage: Cannot read property 'pageOrError' of undefined
   //    at file:///Users/oliverswitzer/workspace/playwright-cdp-spike/first_session.js:50:36 { name: 'TypeError' }
   const pageTwo = await contextTwo.newPage();
-  const hello = await pageTwo.evaluate(() => window.hello);
-  console.log("say: ", hello);
-  await browser2.close();
-  await context1.close();
 })();
